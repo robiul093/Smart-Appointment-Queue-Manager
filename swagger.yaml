@@ -1,0 +1,141 @@
+openapi: 3.0.0
+info:
+  title: Smart Appointment & Queue Manager API
+  description: API for managing appointments, staff, and queues.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Local server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Appointment:
+      type: object
+      properties:
+        customerName:
+          type: string
+        serviceId:
+          type: string
+        staffId:
+          type: string
+          nullable: true
+        date:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [Scheduled, Completed, Cancelled, No-Show, Pending]
+    Staff:
+      type: object
+      properties:
+        name:
+          type: string
+        serviceType:
+          type: string
+        dailyCapacity:
+          type: integer
+        availabilityStatus:
+          type: string
+          enum: [Available, On Leave]
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        201:
+          description: User created
+  /auth/login:
+    post:
+      summary: Login user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: Login successful
+
+  /staff:
+    get:
+      summary: Get all staff
+      tags: [Staff]
+      responses:
+        200:
+          description: List of staff
+    post:
+      summary: Create staff
+      tags: [Staff]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Staff"
+      responses:
+        201:
+          description: Staff created
+
+  /appointments:
+    get:
+      summary: Get appointments
+      tags: [Appointments]
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+        - in: query
+          name: staffId
+          schema:
+            type: string
+      responses:
+        200:
+          description: List of appointments
+    post:
+      summary: Create appointment
+      description: Automatically handles queueing if staff is full.
+      tags: [Appointments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Appointment"
+      responses:
+        201:
+          description: Appointment created (Scheduled or Queued)
+        409:
+          description: Time conflict
+
+  /dashboard/stats:
+    get:
+      summary: Get dashboard statistics
+      tags: [Dashboard]
+      responses:
+        200:
+          description: Stats for dashboard
